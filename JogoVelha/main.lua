@@ -5,13 +5,12 @@ function love.load()
         {"", "", ""},
         {"", "", ""}
     }
-    current_player = "X"
+    current_player = "X" -- humano sempre começa
     winner = nil
 
-    -- Animação: cor vibrante que vai mudando
     animation = {
         time = 0,
-        speed = 2 -- velocidade da animação
+        speed = 2
     }
 end
 
@@ -20,7 +19,6 @@ function love.update(dt)
 end
 
 function love.draw()
-    -- Cores vibrantes para o tabuleiro
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1)
     love.graphics.setColor(0.2 + math.abs(math.sin(animation.time)) * 0.8, 0.6, 1)
     for i = 1, 2 do
@@ -29,7 +27,6 @@ function love.draw()
         love.graphics.line(0, i * grid_size, 3 * grid_size, i * grid_size)
     end
 
-    -- Desenhar X e O animados
     for row = 1, 3 do
         for col = 1, 3 do
             local symbol = board[row][col]
@@ -38,13 +35,11 @@ function love.draw()
                 local y = (row - 1) * grid_size + grid_size/2
 
                 if symbol == "X" then
-                    -- X com cor vibrante animada
                     love.graphics.setColor(1, math.abs(math.sin(animation.time)), 0.2)
                     love.graphics.setLineWidth(8)
                     love.graphics.line(x - 30, y - 30, x + 30, y + 30)
                     love.graphics.line(x + 30, y - 30, x - 30, y + 30)
                 else
-                    -- O com cor vibrante diferente
                     love.graphics.setColor(0.2, 1, math.abs(math.sin(animation.time)))
                     love.graphics.setLineWidth(8)
                     love.graphics.circle("line", x, y, 30)
@@ -53,7 +48,6 @@ function love.draw()
         end
     end
 
-    -- Mostrar vencedor
     if winner then
         love.graphics.setColor(1, 1, 1)
         love.graphics.print("Vencedor: " .. winner, 10, 3 * grid_size + 10, 0, 2, 2)
@@ -61,28 +55,48 @@ function love.draw()
 end
 
 function love.mousepressed(x, y, button)
-    if button == 1 and not winner then
+    if button == 1 and not winner and current_player == "X" then
         local col = math.floor(x / grid_size) + 1
         local row = math.floor(y / grid_size) + 1
 
         if row >=1 and row <=3 and col >=1 and col <=3 then
             if board[row][col] == "" then
-                board[row][col] = current_player
+                board[row][col] = "X"
                 checkWinner()
                 if not winner then
-                    if current_player == "X" then
-                        current_player = "O"
-                    else
-                        current_player = "X"
-                    end
+                    current_player = "O"
+                    computerMove() -- vez do computador
                 end
             end
         end
     end
 end
 
+function computerMove()
+    -- IA simples: escolhe aleatoriamente uma casa vazia
+    local emptyCells = {}
+    for row = 1, 3 do
+        for col = 1, 3 do
+            if board[row][col] == "" then
+                table.insert(emptyCells, {row=row, col=col})
+            end
+        end
+    end
+
+    if #emptyCells == 0 then
+        return
+    end
+
+    -- Escolhe uma posição aleatória
+    local choice = emptyCells[math.random(#emptyCells)]
+    board[choice.row][choice.col] = "O"
+    checkWinner()
+    if not winner then
+        current_player = "X"
+    end
+end
+
 function checkWinner()
-    -- Checar linhas e colunas
     for i = 1, 3 do
         if board[i][1] ~= "" and board[i][1] == board[i][2] and board[i][2] == board[i][3] then
             winner = board[i][1]
@@ -94,7 +108,6 @@ function checkWinner()
         end
     end
 
-    -- Checar diagonais
     if board[1][1] ~= "" and board[1][1] == board[2][2] and board[2][2] == board[3][3] then
         winner = board[1][1]
         return
@@ -104,7 +117,6 @@ function checkWinner()
         return
     end
 
-    -- Checar empate
     local filled = true
     for row = 1, 3 do
         for col = 1, 3 do
